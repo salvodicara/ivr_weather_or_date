@@ -117,7 +117,6 @@ const rtcEvent = async (event, { logger, csClient,storageClient }) => {
             //audio:dtmf
         } else if (type == 'audio:dtmf' && event.body && event.body.digit == '5') { /* the digit 5 was pressed */
             const { conversation_id } = event
-            console.log({conversation_id, record_id})
             if (record_id) {
                 await csClient({
                     url: `${DATACENTER}/v0.3/conversations/${conversation_id}/events`,
@@ -136,7 +135,7 @@ const rtcEvent = async (event, { logger, csClient,storageClient }) => {
             const recordings = recordingsString ? JSON.parse(recordingsString) : []
 
             recordings.push(event)
-            console.log({recordings, event})
+
             await storageClient.set('recordings', JSON.stringify(recordings))
         }
 
