@@ -55,6 +55,7 @@ const rtcEvent = async (event, { logger, csClient,storageClient }) => {
 
             const conversation_id = convRes.data.id
             const user_id = event.body.user.id
+            let record_id;
 
             /* join the user created by the knocker in the conversation  aka we join the caller to the conversation we have just created */
             const memberRes = await csClient({
@@ -87,38 +88,55 @@ const rtcEvent = async (event, { logger, csClient,storageClient }) => {
             await csClient({
                 url: `${DATACENTER}/v0.3/legs/${legId}/talk`,
                 method: "post",
-                data: { "loop": 1, "text": "Hello, now we are gonna record you! ", "level": 0, "voice_name": "Kimberly" },
+                data: { "loop": 1, "text": "Hello, we are now going to record the call and all its participants. Press 5 to stop recording at any point.", "level": 0, "voice_name": "Kimberly" },
             })
 
         } else if (type == 'audio:say:done'){ /* the text to speech is finished */
             /* we hangup the call */
-            const legId = event.body.channel.id
-            let recordRes = await csClient({
-                url: `${DATACENTER}/v0.3/legs/${legId}/recording`,
-                method: "post",
-                data: {
-                    "split": false,
-                    "streamed": true,
-                    "beep": true,
-                    "public": true,
-                    "format": "mp3"
-                }
-            })
-            let record_id = recordRes.data.id
-            await sleep(2000)
-            
-            await csClient({
-                url: `${DATACENTER}/v0.3/legs/${legId}/recording`,
-                method: "delete"
-            })
-
-            //audio:record:done
-        } else if (type == 'audio:record:done') { /* the text to speech is finished */
+            const { conversation_id } = event
+             let recordRes = await csClient({
+                 url: `${DATACENTER}/v0.3/conversations/${conversation_id}/events`,
+                 method: "post",
+                 data: {
+                     type: "audio:record",
+                     from: conversation_id,
+                     body: {
+                         validity:   1,
+                         streamed: true,
+                         format: "mp3",
+                         beep_start: true,
+                         beep_stop: true,
+                         detect_speech: false,
+                         split: true,
+                         multitrack: true,
+                         channels: 1
+                     }
+                 }
+             })
+            record_id = recordRes.data.body.recording_id
+            //audio:dtmf
+        } else if (type == 'audio:dtmf' && event.body && event.body.digit == '5') { /* the digit 5 was pressed */
+            const { conversation_id } = event
+            console.log({conversation_id, record_id})
+            if (record_id) {
+                await csClient({
+                    url: `${DATACENTER}/v0.3/conversations/${conversation_id}/events`,
+                    method: "post",
+                    data: {
+                        type: "audio:record:stop",
+                        from: conversation_id,
+                        body: {
+                            record_id
+                        }
+                    }
+                })
+            }
+        }  else if (type == 'audio:record:done') { /* the text to speech is finished */
             const recordingsString = await storageClient.get('recordings')
             const recordings = recordingsString ? JSON.parse(recordingsString) : []
 
             recordings.push(event)
-
+            console.log({recordings, event})
             await storageClient.set('recordings', JSON.stringify(recordings))
         }
 
