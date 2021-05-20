@@ -38,7 +38,7 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-const rtcEvent = async (event, { logger, csClient }) => {
+const rtcEvent = async (event, { logger, csClient,storageClient }) => {
 
     try { 
         const type = event.type
@@ -112,9 +112,14 @@ const rtcEvent = async (event, { logger, csClient }) => {
                 method: "delete"
             })
 
+            //audio:record:done
+        } else if (type == 'audio:record:done') { /* the text to speech is finished */
+            const recordingsString = await storageClient.get('recordings')
+            const recordings = recordingsString ? JSON.parse(recordingsString) : []
 
-        } else if (type == 'audio:record:stop') { /* the text to speech is finished */
-            
+            recordings.push(event)
+
+            await storageClient.set('recordings', JSON.stringify(recordings))
         }
 
     } catch (err) {
@@ -132,17 +137,20 @@ const rtcEvent = async (event, { logger, csClient }) => {
  * the only difference is that in every req, you will have a req.nexmo variable containning a nexmo context
  * 
  */
-const route =  (app) => {
-    app.get('/hello', async (req, res) => {
+const route =  async (app) => {
+    app.get('/recordings', async (req, res) => {
 
         const {
             logger,
+            storageClient
         } = req.nexmo;
+        const recordingsString = await storageClient.get('recordings')
+        const recordings = recordingsString ? JSON.parse(recordingsString) : []
 
         logger.info(`Hello Request HTTP `)
 
         res.json({
-            text: "Hello Request!"
+            recordings
         })
     })
 }
