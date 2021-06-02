@@ -1,4 +1,4 @@
-# capi-fn_record_leg
+# capi-fn_ncco_dtmf
 
 ## install / run it:
 
