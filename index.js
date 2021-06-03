@@ -22,7 +22,7 @@ const voiceAnswer = async (req, res, next) => {
             {
                 "action": "input",
                 "eventUrl": [
-                  "https://3f9c46f2e3a37c6e25e7ab8192b47158.m.pipedream.net"
+                  "https://examplecallbackurl.net"
                 ],
                 "type": [ "dtmf", "speech" ],
                 "dtmf": {
