@@ -2,7 +2,7 @@
 
 const voiceEvent = async (req, res, next) => {
     const { logger } = req.nexmo;
-    try { 
+    try {
         logger.info("event", { event: req.body});
         res.json({});
     } catch (err) {
@@ -22,7 +22,7 @@ const voiceAnswer = async (req, res, next) => {
             {
                 "action": "input",
                 "eventUrl": [
-                  "https://3f9c46f2e3a37c6e25e7ab8192b47158.m.pipedream.net"
+                    "https://3f9c46f2e3a37c6e25e7ab8192b47158.m.pipedream.net"
                 ],
                 "type": [ "dtmf", "speech" ],
                 "dtmf": {
@@ -42,7 +42,7 @@ const voiceAnswer = async (req, res, next) => {
 const route = (app, express) => {
     const expressWs = require('express-ws')(app);
     const WebSocket = require('ws');
-    
+
     expressWs.getWss().on('connection', function (ws) {
         console.log('Websocket connection is open');
     });
@@ -52,9 +52,63 @@ const route = (app, express) => {
         ws.on('message', (msg) => {
             setTimeout(() => {
                 if (ws.readyState === WebSocket.OPEN) ws.send(msg);
-            }, 500); 
+            }, 500);
         });
     });
+
+    app.get('/api/token/:username', async (req, res) => {
+        const {
+            logger,
+            csClient,
+            storageClient,
+            generateUserToken,
+            config
+        } = req.nexmo;
+
+        // logger.error({ user }, "STORAGE")
+        const { username } = req.params;
+
+        res.json({
+            username,
+            token: generateUserToken(username)
+        })
+
+    })
+
+    app.get('/api/info', async (req, res) => {
+        const {
+            logger,
+            csClient,
+            storageClient,
+            config
+        } = req.nexmo;
+
+        // logger.error({ user }, "STORAGE")
+        res.json({
+            config
+        })
+
+    })
+
+    app.get('/api/users', async (req, res) => {
+        const {
+            logger,
+            csClient,
+            storageClient,
+            config
+        } = req.nexmo;
+
+        const resGetUsers = await csClient({
+            url: `${DATACENTER}/v0.3/users`,
+            method: "get"
+        })
+
+        // logger.error({ user }, "STORAGE")
+        res.json({
+            users: resGetUsers.data
+        })
+
+    })
 };
 
 module.exports = {
