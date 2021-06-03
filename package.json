@@ -12,7 +12,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "conversation-api-function": "0.0.7"
+    "conversation-api-function": "0.0.7",
+    "express-ws": "^4.0.0"
   },
   "repository": {
     "type": "git",
